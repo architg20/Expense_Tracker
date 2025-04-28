@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    label {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .message a {
+      color: #007BFF;
+      text-decoration: none;
+    }
+
+    .message a:hover {
+      text-decoration: underline;
+    }
+
+    .error-message {
+      color: red;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Signup</h1>
+    <form id="signup-form">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" required>
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+
+      <button type="submit">Signup</button>
+    </form>
+
+    <div class="message">
+      <p>Already have an account? <a href="/">Login here</a></p>
+    </div>
+
+    <div id="error-message" class="error-message"></div>
+  </div>
+
+  <script>
+    const signupForm = document.getElementById('signup-form');
+    const errorMessage = document.getElementById('error-message');
+  
+    signupForm.addEventListener('submit', async (event) => {
+      event.preventDefault();  // Prevent default form submission
+  
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+  
+      // Reset error message
+      errorMessage.innerHTML = '';
+  
+      try {
+        const response = await fetch('/auth/signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, email, password }),
+        });
+  
+        const data = await response.json();
+  
+        if (response.ok) {
+          // Redirect to login page if signup is successful
+          window.location.href = '/login';
+        } else {
+          // Show error message returned from backend
+          errorMessage.innerHTML = data.message || 'Signup failed. Please try again.';
+        }
+      } catch (error) {
+        errorMessage.innerHTML = 'An error occurred. Please try again.';
+      }
+    });
+  </script>
+  </body>
+</html>

@@ -1,0 +1,215 @@
+<style>
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
+#user-profile {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+  background-color: #333;
+  color: #fff;
+}
+
+#username-btn {
+  background-color: #555;
+  border: none;
+  color: #fff;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+#dropdown {
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  min-width: 160px;
+  right: 10px;
+}
+
+#dropdown button {
+  background-color: #fff;
+  color: #333;
+  border: none;
+  padding: 10px;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}
+
+#dropdown button:hover {
+  background-color: #ddd;
+}
+
+#expense-form {
+  background-color: #fff;
+  padding: 20px;
+  margin: 20px auto;
+  border-radius: 8px;
+  max-width: 500px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#expense-form input, #expense-form select, #expense-form button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#expense-form button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#expense-form button:hover {
+  background-color: #45a049;
+}
+
+#expense-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 20px auto;
+  max-width: 500px;
+}
+
+#expense-list li {
+  background-color: #fff;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+}
+
+#expense-list button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+#expense-list button:hover {
+  background-color: #e53935;
+}
+</style>
+
+<!-- User Profile and Logout Button -->
+<div id="user-profile">
+  <button id="username-btn">Hi, <span id="username">Username</span></button>
+  <div id="dropdown" style="display: none;">
+    <button id="logout-btn">Logout</button>
+    <button id="buy-premium-btn">Buy Premium</button>
+  </div>
+</div>
+
+<form id="expense-form">
+  <input type="number" id="amount" placeholder="Amount" required />
+  <input type="text" id="description" placeholder="Description" required />
+  <select id="category" required>
+    <option value="">Select Category</option>
+    <option value="Food">Food</option>
+    <option value="Fuel">Fuel</option>
+    <option value="Travel">Travel</option>
+    <option value="Entertainment">Entertainment</option>
+  </select>
+  <button type="submit">Add Expense</button>
+</form>
+
+<ul id="expense-list"></ul>
+
+
+
+<script>
+  const token = localStorage.getItem('token'); // Retrieve JWT token
+  console.log(token);
+  if (!token) {
+    // If no token, redirect to login page
+    window.location.href = 'login.html';
+  }
+
+  // Decode token and set username
+  const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT
+  const username = decodedToken.username;  // Assuming username is in the token payload
+  document.getElementById('username').textContent = username;
+
+  document.getElementById('expense-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const amount = document.getElementById('amount').value;
+    const description = document.getElementById('description').value;
+    const category = document.getElementById('category').value;
+
+    const response = await fetch('/expense/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`  // Include JWT token in header
+      },
+      body: JSON.stringify({ amount, description, category })
+    });
+
+    const data = await response.json();
+    console.log(data);
+    if (data.success) {
+      alert('Expense added');
+      loadExpenses(); // reload list
+    } else {
+      alert('Failed to add');
+    }
+  });
+
+  async function loadExpenses() {
+    const response = await fetch('/expense/get', {
+      headers: { 'Authorization': `Bearer ${token}` }  
+    });
+    const data = await response.json();
+
+    const list = document.getElementById('expense-list');
+    list.innerHTML = '';
+
+    data.expenses.forEach(exp => {
+      const li = document.createElement('li');
+      li.innerHTML = `${exp.amount} - ${exp.description} (${exp.category}) 
+        <button onclick="deleteExpense(${exp.id})">Delete</button>`;
+      list.appendChild(li);
+    });
+  }
+
+  async function deleteExpense(id) {
+    await fetch(`/expense/delete/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }  // Include JWT token in header
+    });
+    loadExpenses();
+  }
+
+  // Logout functionality
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    // Clear token from localStorage
+    localStorage.removeItem('token');
+  
+    // Redirect to login page
+    window.location.href = 'login.html';
+  });
+
+  // Toggle dropdown visibility
+  document.getElementById('username-btn').addEventListener('click', () => {
+    const dropdown = document.getElementById('dropdown');
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+  });
+
+  // Load expenses on page load
+  loadExpenses();
+</script>

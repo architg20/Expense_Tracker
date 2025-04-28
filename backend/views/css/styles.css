@@ -1,0 +1,239 @@
+/* styles.css */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  #user-profile {
+    background-color: #4CAF50;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+  }
+  
+  #username-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+  }
+  
+  #dropdown {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 150px;
+    display: none;
+    flex-direction: column;
+  }
+  
+  #dropdown button {
+    background: none;
+    border: none;
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+    color: #333;
+  }
+  
+  #dropdown button:hover {
+    background-color: #f1f1f1;
+  }
+  
+  #expense-form {
+    background-color: white;
+    margin: 30px auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  #expense-form input,
+  #expense-form select,
+  #expense-form button {
+    margin-bottom: 15px;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+  
+  #expense-form button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  #expense-form button:hover {
+    background-color: #45a049;
+  }
+  
+  #expense-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px auto;
+    width: 90%;
+    max-width: 600px;
+  }
+  
+  #expense-list li {
+    background-color: white;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  #expense-list button {
+    background-color: #ff4d4d;
+    border: none;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  
+  #expense-list button:hover {
+    background-color: #e60000;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 300px;
+  }
+  
+  h1 {
+    text-align: center;
+    color: #333;
+  }
+  
+  label {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+    display: block;
+  }
+  
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #45a049;
+  }
+  
+  .message {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+  }
+  
+  .message a {
+    color: #007BFF;
+    text-decoration: none;
+  }
+  
+  .message a:hover {
+    text-decoration: underline;
+  }
+  
+  .error-message {
+    color: red;
+    text-align: center;
+  }
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- User Profile and Logout Button -->
+  <div id="user-profile">
+    <button id="username-btn">Hi, <span id="username">Username</span></button>
+    <div id="dropdown" style="display: none;">
+      <button id="logout-btn">Logout</button>
+      <button id="buy-premium-btn">Buy Premium</button>
+    </div>
+  </div>
+
+  <!-- Expense Form -->
+  <form id="expense-form">
+    <input type="number" id="amount" placeholder="Amount" required />
+    <input type="text" id="description" placeholder="Description" required />
+    <select id="category" required>
+      <option value="">Select Category</option>
+      <option value="Food">Food</option>
+      <option value="Fuel">Fuel</option>
+      <option value="Travel">Travel</option>
+      <option value="Entertainment">Entertainment</option>
+    </select>
+    <button type="submit">Add Expense</button>
+  </form>
+
+  <!-- Expense List -->
+  <ul id="expense-list"></ul>
+
+  <script src="expense.js"></script>
+</body>
+</html>
