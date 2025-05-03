@@ -5,8 +5,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { User } = require('./models/user'); // Import User model, adjust if necessary
 const expenseRoutes = require('./routes/expenseRoutes'); 
-const purchaseRoutes = require('./routes/purchaseRoutes');
-
+//const purchaseRoutes = require('./routes/purchaseRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 const app = express();
 require('dotenv').config();
 
@@ -33,9 +33,12 @@ app.get('/signup', (req, res) => {
 // Expense Routes
 app.use('/expense', expenseRoutes);
 
-app.use('/purchase', purchaseRoutes);
+//app.use('/purchase', purchaseRoutes);
 // Database setup and syncing
 const sequelize = require('./config/database'); // Adjust the path if necessary
+
+
+app.use('/payment', paymentRoutes);
 
 // Start the server after syncing the database
 sequelize.sync()
