@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Payment Success</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0fff0;
+      text-align: center;
+      margin-top: 100px;
+    }
+    h1 {
+      color: green;
+    }
+    p {
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎉 Payment Successful!</h1>
+  <p>Welcome, <span id="username">User</span>. You are now a Premium Member.</p>
+  <p>Redirecting to your dashboard...</p>
+
+  <script>
+    // Get token from URL query param
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    if (token) {
+      localStorage.setItem("token", token);
+
+      const decoded = JSON.parse(atob(token.split('.')[1]));
+      document.getElementById("username").textContent = decoded.username;
+
+      // Redirect to expense page after 3 seconds
+      setTimeout(() => {
+        window.location.href = "expense.html";
+      }, 3000);
+    } else {
+      document.body.innerHTML = "<h1>⚠️ Something went wrong. Token missing.</h1>";
+    }
+  </script>
+
+</body>
+</html>

@@ -1,55 +1,62 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const { User } = require('./models/user'); // Import User model, adjust if necessary
+const sequelize = require('./config/database'); // Adjust the path if necessary
+const authRoutes = require('./routes/authRoutes'); // Import routes for handling login/signup
 const expenseRoutes = require('./routes/expenseRoutes'); 
-//const purchaseRoutes = require('./routes/purchaseRoutes');
-const paymentRoutes = require('./routes/paymentRoutes');
-const app = express();
+const paymentRoutes = require('./routes/paymentRoutes'); // Import payment routes
+const premiumRoutes = require('./routes/premiumRoutes');
+const passwordRoutes = require('./routes/password');
 require('dotenv').config();
 
+
+require('./models/user');
+require('./models/payment');
+require('./models/expense');
+
+
+const app = express();
+
 // Middleware
-app.use(bodyParser.urlencoded({ extended: false })); // for handling URL-encoded data (like form submissions)
+app.use(bodyParser.urlencoded({ extended: false })); // For handling URL-encoded data (like form submissions)
 app.use(express.json()); // Add this to handle JSON data
 app.use(express.static(path.join(__dirname, 'views'))); // Serve static files from 'views' folder
+app.use(express.static(path.join(__dirname, 'public')));
+
 
 // Routes
-const authRoutes = require('./routes/authRoutes'); // Import routes for handling login/signup
-app.use('/auth', authRoutes);
+app.use('/auth', authRoutes); 
+app.use('/expense', expenseRoutes); 
+app.use('/payment', paymentRoutes); 
+app.use('/premium', premiumRoutes);
+app.use('/password', passwordRoutes);
 
 
-// Serve the login page by default
+
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'login.html')); // Serve login page at '/'
+  res.sendFile(path.join(__dirname, 'views', 'login.html')); 
 });
 
-// Serve the signup page when visiting '/signup'
+
 app.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'signup.html')); // Serve signup page at '/signup'
 });
 
-// Expense Routes
-app.use('/expense', expenseRoutes);
+app.get('/payment-failed', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'payment-failed.html'));
+});
 
-//app.use('/purchase', purchaseRoutes);
-// Database setup and syncing
-const sequelize = require('./config/database'); // Adjust the path if necessary
-
-
-app.use('/payment', paymentRoutes);
-
+app.get('/expense', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'expense.html'));
+});
 // Start the server after syncing the database
-sequelize.sync()
+sequelize.sync({ alter: true })
   .then(() => {
     console.log('Database synced successfully!');
   })
   .catch(err => {
     console.error('Error syncing database:', err);
   });
-
-// Your route handlers and middleware go here
 
 app.listen(3000, () => {
   console.log(`Server is running on port 3000`);

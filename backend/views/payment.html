@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cashfree Checkout Integration</title>
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .card {
+      width: 600px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      background: #5cb85c;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cashfree Checkout Integration</h1>
+  </header>
+
+  <div class="card">
+    <h3>Click below to open the checkout page in current tab</h3>
+    <button id="renderBtn">Pay Now</button>
+    <div id="cf_checkout"></div>
+  </div>
+
+  <script src="cashfreeWeb_self.js"></script>
+
+  <!-- <script>
+    
+
+    document.getElementById("renderBtn").addEventListener("click", async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          alert("User not authenticated. Please login.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        const decodedToken = JSON.parse(atob(token.split('.')[1]));
+        const customerID = decodedToken.id;
+
+        // Call backend to initiate payment
+        const response = await fetch("http://localhost:3000/payment/pay", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            orderAmount: 2000,
+            orderCurrency: "INR",
+            customerID,
+            customerPhone: "9999999999"
+          }),
+        });
+
+        const data = await response.json();
+        const paymentSessionId = data.paymentSessionId;
+        const orderId = data.orderId;
+
+        const checkoutOptions = {
+          paymentSessionId,
+          redirectTarget: "_modal"
+        };
+
+        const result = await cashfree.checkout(checkoutOptions);
+
+        if (result.error) {
+          console.log("Payment error:", result.error);
+        }
+
+        if (result.paymentDetails) {
+          console.log("Payment completed:", result.paymentDetails.paymentMessage);
+
+          const statusRes = await fetch(`http://localhost:3000/payment/status/${orderId}`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          });
+
+          const statusData = await statusRes.json();
+          alert("Your payment status is: " + statusData.orderStatus);
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        alert("Something went wrong during the payment process.");
+      }
+    });
+  </script> -->
+</body>
+</html>

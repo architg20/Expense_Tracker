@@ -103,6 +103,12 @@ body {
 #expense-list button:hover {
   background-color: #e53935;
 }
+
+#dropdown button:disabled {
+  background-color: #888 !important;
+  color: white;
+  cursor: default;
+}
 </style>
 
 <!-- User Profile and Logout Button -->
@@ -129,20 +135,81 @@ body {
 
 <ul id="expense-list"></ul>
 
+<div style="text-align: center; margin-top: 10px;">
+  <label for="items-per-page">Expenses per page:</label>
+  <select id="items-per-page">
+    <option value="5">5</option>
+    <option value="10">10</option>
+    <option value="20">20</option>
+    <option value="40">40</option>
+  </select>
+</div>
+
+
+
+<div id="pagination" style="text-align: center; margin-top: 20px; display: none;">
+  <button id="prev-btn">Previous</button>
+  <span id="page-info">Page 1</span>
+  <button id="next-btn">Next</button>
+</div>
+
+<button id="view-reports-btn" style="display: none; background-color: #6a5acd; color: white; padding: 10px 15px; border: none; border-radius: 5px;">
+  📊 View Reports
+</button>
+
+
+
+
+<div style="text-align: center; margin: 20px;">
+  <button id="leaderboard-btn" style="display: none; background-color: #007BFF; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+    Show Leaderboard
+  </button>
+</div>
+
+
+<div id="leaderboard-section" style="display: none; max-width: 500px; margin: auto;">
+  <h2>🏆 Leaderboard</h2>
+  <ul id="leaderboard-list" style="list-style: none; padding: 0;"></ul>
+</div>
 
 
 <script>
-  const token = localStorage.getItem('token'); // Retrieve JWT token
+
+  
+
+
+  const token = localStorage.getItem('token'); 
   console.log(token);
   if (!token) {
-    // If no token, redirect to login page
+
     window.location.href = 'login.html';
   }
 
   // Decode token and set username
   const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT
-  const username = decodedToken.username;  // Assuming username is in the token payload
+  const username = decodedToken.username;  
+  const isPremiumUser = decodedToken.premium;
   document.getElementById('username').textContent = username;
+  if (isPremiumUser) {
+  document.getElementById('leaderboard-btn').style.display = 'inline-block';
+  document.getElementById('view-reports-btn').style.display = 'inline-block';
+  }
+
+
+  const isPremium = decodedToken.premium;
+  const buyBtn = document.getElementById('buy-premium-btn');
+
+  document.getElementById('view-reports-btn').addEventListener('click', () => {
+  window.location.href = `report.html?token=${encodeURIComponent(token)}`;
+});
+
+if (isPremium) {
+  buyBtn.disabled = true;
+  buyBtn.textContent = "You are a Premium User ⭐";
+  buyBtn.style.backgroundColor = "#888";
+  buyBtn.style.cursor = "default";
+}
+
 
   document.getElementById('expense-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -155,7 +222,7 @@ body {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`  // Include JWT token in header
+        'Authorization': `Bearer ${token}`  
       },
       body: JSON.stringify({ amount, description, category })
     });
@@ -164,35 +231,169 @@ body {
     console.log(data);
     if (data.success) {
       alert('Expense added');
-      loadExpenses(); // reload list
+      fetchAllExpenses(); // reload list
     } else {
       alert('Failed to add');
     }
   });
 
-  async function loadExpenses() {
-    const response = await fetch('/expense/get', {
-      headers: { 'Authorization': `Bearer ${token}` }  
-    });
-    const data = await response.json();
 
-    const list = document.getElementById('expense-list');
+  document.getElementById('leaderboard-btn').addEventListener('click', async () => {
+  try {
+    const response = await fetch('/premium/showleaderboard', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+    const leaderboard = data.leaderboard;
+
+    const list = document.getElementById('leaderboard-list');
     list.innerHTML = '';
 
-    data.expenses.forEach(exp => {
+    leaderboard.forEach((user, index) => {
       const li = document.createElement('li');
-      li.innerHTML = `${exp.amount} - ${exp.description} (${exp.category}) 
-        <button onclick="deleteExpense(${exp.id})">Delete</button>`;
+      li.textContent = `${index + 1}. ${user.username} - Total Expenses ₹${user.totalExpense}`;
       list.appendChild(li);
     });
+
+    document.getElementById('leaderboard-section').style.display = 'block';
+  } catch (err) {
+    console.error("Error loading leaderboard:", err);
+    alert("Could not load leaderboard.");
   }
+  });
+
+  
+
+ let currentPage = 1;
+ let limit = parseInt(localStorage.getItem('expensesPerPage')) || 10;
+ let allExpenses = [];
+
+ // Set dropdown to reflect saved preference
+document.getElementById('items-per-page').value = limit;
+
+// Handle change in items per page dynamically
+document.getElementById('items-per-page').addEventListener('change', () => {
+  limit = parseInt(document.getElementById('items-per-page').value);
+  localStorage.setItem('expensesPerPage', limit);
+  currentPage = 1; // reset to first page
+  renderExpenses(currentPage); // re-render with new limit
+});
+git config user.name
+git config user.email
+async function fetchAllExpenses() {
+  const response = await fetch('/expense/get', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+
+  const data = await response.json();
+
+
+  if (!data.success || !Array.isArray(data.expenses)){
+    console.error("Expected an array but got:", data);
+    if (data.message === 'Token has expired') {
+      alert("Session expired. Please log in again.");
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    } else {
+      alert("Failed to fetch expenses.");
+    }
+    return;
+  }
+
+  allExpenses = data.expenses;
+  renderExpenses(currentPage);
+}
+
+ function renderExpenses(page = 1) {
+  const list = document.getElementById('expense-list');
+  list.innerHTML = '';
+
+  const start = (page - 1) * limit;
+  const end = start + limit;
+  const expensesToShow = allExpenses.slice(start, end);
+
+  if (expensesToShow.length === 0) {
+    list.innerHTML = '<li>No expenses found.</li>';
+    document.getElementById('pagination').style.display = 'none';
+    return;
+  }
+
+  expensesToShow.forEach(exp => {
+    const li = document.createElement('li');
+    li.innerHTML = `${exp.amount} - ${exp.description} (${exp.category}) 
+      <button onclick="deleteExpense(${exp.id})">Delete</button>`;
+    list.appendChild(li);
+  });
+
+  const totalPages = Math.ceil(allExpenses.length / limit);
+  currentPage = page;
+  document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+  document.getElementById('pagination').style.display = 'block';
+  document.getElementById('prev-btn').disabled = currentPage <= 1;
+  document.getElementById('next-btn').disabled = currentPage >= totalPages;
+}
+
+  
+
+  function filterExpenses(type) {
+  loadExpenses(type);
+   }
+
+
+function downloadCSV(expenses) {
+  const now = new Date();
+  const currentDate = now.toLocaleDateString();
+  const currentTime = now.toLocaleTimeString();
+  const year = now.getFullYear();
+  const monthYear = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  let csv = `Day-to-Day Expenses\n`;
+  csv += `Date: ${currentDate}\n`;
+  csv += `Time: ${currentTime}\n`;
+  csv += `Year: ${year}\n`;
+  csv += `Month & Year: ${monthYear}\n\n`;
+
+  csv += `Date,Description,Category,Income,Expense\n`;
+
+  let totalExpense = 0;
+  let totalIncome = 0;
+
+  expenses.forEach(exp => {
+    const date = new Date(exp.createdAt).toLocaleDateString();
+    const isIncome = exp.type === 'income'; // assume backend gives "type"
+    const income = isIncome ? exp.amount : '';
+    const expense = !isIncome ? exp.amount : '';
+    if (isIncome) totalIncome += Number(exp.amount);
+    else totalExpense += Number(exp.amount);
+
+    csv += `${date},"${exp.description}",${exp.category},${income},${expense}\n`;
+  });
+
+  const savings = totalIncome - totalExpense;
+
+  csv += `\nTotal Expenditure:,₹${totalExpense.toFixed(2)}\n`;
+  csv += `Savings:,₹${savings.toFixed(2)}\n`;
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'DayToDay_Expense_Report.csv';
+  a.click();
+  window.URL.revokeObjectURL(url);
+  }
+
+
 
   async function deleteExpense(id) {
     await fetch(`/expense/delete/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }  // Include JWT token in header
     });
-    loadExpenses();
+    fetchAllExpenses();
   }
 
   // Logout functionality
@@ -211,26 +412,23 @@ body {
   });
 
   // Load expenses on page load
-  loadExpenses();
-</script>
-<script src="https://sdk.cashfree.com/js/cashfree.js"></script>
-<script>
-// Handle Buy Premium button click
-document.getElementById('buy-premium-btn').addEventListener('click', async () => {
-  try {
-    const response = await fetch('/payment', {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    const data = await response.json();
-    console.log(data);
-
-    // Redirect user to Cashfree Payment page
-    window.location.href = data.paymentLink;  // Make sure backend returns { paymentLink: 'https://...' }
-  } catch (error) {
-    console.error('Error redirecting to payment:', error);
-    alert('Failed to redirect to payment');
+  fetchAllExpenses();
+  document.getElementById('prev-btn').addEventListener('click', () => {
+  if (currentPage > 1) {
+    renderExpenses(currentPage - 1);
   }
+});
+
+document.getElementById('next-btn').addEventListener('click', () => {
+  renderExpenses(currentPage + 1);
+});
+
+
+</script>
+<script src="https://sdk.cashfree.com/js/v4/cashfree.js"></script>
+<script>
+  // Handle Buy Premium button click
+  document.getElementById('buy-premium-btn').addEventListener('click', () => {
+  window.location.href = `/payment.html?token=${encodeURIComponent(localStorage.getItem('token'))}`;
 });
 </script>

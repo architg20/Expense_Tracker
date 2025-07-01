@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reports</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+
+    h2 {
+      color: #333;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 5px;
+    }
+
+    .report-section {
+      background: white;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 600px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📊 Your Reports</h1>
+
+  <div class="report-section" id="daily-report">
+    <h2>Daily Report</h2>
+    <ul id="daily-list"></ul>
+  </div>
+
+  <div class="report-section" id="monthly-report">
+    <h2>Monthly Report</h2>
+    <ul id="monthly-list"></ul>
+  </div>
+
+  <div class="report-section" id="yearly-report">
+    <h2>Yearly Report</h2>
+    <ul id="yearly-list"></ul>
+  </div>
+
+  <div style="text-align: center; margin-top: 30px;">
+    <button onclick="window.location.href='expense.html'">🔙 Back to Expense Page</button>
+  </div>
+
+  <div style="text-align: center; margin: 20px;">
+  <button id="download-report-btn"
+          style="background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px;">
+    ⬇️ Download Report
+  </button>
+</div>
+
+  <script>
+    const token = localStorage.getItem('token');
+
+    async function fetchAndRenderReports() {
+      const res = await fetch('/expense/get', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+      const expenses = data.expenses;
+
+      const today = new Date().toDateString();
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const daily = expenses.filter(e => new Date(e.createdAt).toDateString() === today);
+      const monthly = expenses.filter(e => {
+        const d = new Date(e.createdAt);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      });
+      const yearly = expenses.filter(e => new Date(e.createdAt).getFullYear() === currentYear);
+
+      renderList('daily-list', daily);
+      renderList('monthly-list', monthly);
+      renderList('yearly-list', yearly);
+    }
+
+    function renderList(id, list) {
+      const ul = document.getElementById(id);
+      ul.innerHTML = '';
+      if (list.length === 0) {
+        ul.innerHTML = '<li>No data found.</li>';
+        return;
+      }
+
+      list.forEach(exp => {
+        const li = document.createElement('li');
+        const date = new Date(exp.createdAt).toLocaleDateString();
+        li.textContent = `${date} - ₹${exp.amount} - ${exp.description} (${exp.category})`;
+        ul.appendChild(li);
+      });
+    }
+
+    fetchAndRenderReports();
+
+
+    
+
+  async function fetchAllExpenses() {
+    try {
+      const response = await fetch('http://localhost:3000/expense/get', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      return data.expenses || [];
+    } catch (err) {
+      console.error("Failed to fetch expenses", err);
+      return [];
+    }
+  }
+
+  function generateCSV(expenses) {
+    const now = new Date();
+    const currentDate = now.toLocaleDateString();
+    const currentTime = now.toLocaleTimeString();
+    const year = now.getFullYear();
+    const monthYear = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    let csv = `Day-to-Day Expenses\n`;
+    csv += `Date: ${currentDate}\n`;
+    csv += `Time: ${currentTime}\n`;
+    csv += `Year: ${year}\n`;
+    csv += `Month & Year: ${monthYear}\n\n`;
+    csv += `Date,Description,Category,Income,Expense\n`;
+
+    let totalExpense = 0;
+    let totalIncome = 0;
+
+    expenses.forEach(exp => {
+      const date = new Date(exp.createdAt).toLocaleDateString();
+      const isIncome = exp.type === 'income';  // optional, default is 'expense'
+      const income = isIncome ? exp.amount : '';
+      const expense = !isIncome ? exp.amount : '';
+      if (isIncome) totalIncome += Number(exp.amount);
+      else totalExpense += Number(exp.amount);
+      csv += `${date},"${exp.description}",${exp.category},${income},${expense}\n`;
+    });
+
+    const savings = totalIncome - totalExpense;
+
+    csv += `\nTotal Expenditure:,₹${totalExpense.toFixed(2)}\n`;
+    csv += `Savings:,₹${savings.toFixed(2)}\n`;
+
+    return csv;
+  }
+
+  async function downloadReport() {
+    const expenses = await fetchAllExpenses();
+    const csv = generateCSV(expenses);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Expense_Report.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('download-report-btn').addEventListener('click', downloadReport);
+  </script>
+</body>
+</html>

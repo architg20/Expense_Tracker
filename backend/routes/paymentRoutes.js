@@ -1,14 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const authenticate = require('../middleware/authenticate');
-const {
-  getPaymentPage,
-  processPayment,
-  getPaymentStatus,
-} = require("../controllers/paymentController");
+const authenticate = require('../middleware/authenticate'); // Middleware for authentication
+const paymentController = require("../controllers/paymentController");
 
-router.get("/p", authenticate,getPaymentPage);
-router.post("/pay",authenticate, processPayment);
-router.get("/payment-status/:paymentSessionId",authenticate, getPaymentStatus);
+// Route to create a payment session
+router.post("/pay", authenticate, paymentController.initPayment);
+
+// Route to get payment status by orderId
+router.get("/status/:orderId", paymentController.getPaymentStatus);
+
+router.post('/test', (req, res) => {
+  console.log("BODY:", req.body);
+  res.json({ received: req.body });
+});
 
 module.exports = router;

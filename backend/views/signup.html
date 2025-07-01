@@ -134,7 +134,7 @@
   
         if (response.ok) {
           // Redirect to login page if signup is successful
-          window.location.href = '/login';
+          window.location.href = '/';
         } else {
           // Show error message returned from backend
           errorMessage.innerHTML = data.message || 'Signup failed. Please try again.';

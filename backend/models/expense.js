@@ -1,7 +1,6 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
-const User = require('./user');  // Import the User model
-
+const User = require('./user');
 const Expense = sequelize.define('Expense', {
   amount: {
     type: DataTypes.FLOAT,
@@ -19,8 +18,8 @@ const Expense = sequelize.define('Expense', {
   timestamps: true
 });
 
-// Set up associations
+
 User.hasMany(Expense, { foreignKey: 'userId' });
 Expense.belongsTo(User, { foreignKey: 'userId' });
 
-module.exports = Expense;  // Default export
+module.exports = Expense;

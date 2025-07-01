@@ -1,6 +1,6 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../config/database');  // Assuming you have this file for DB connection
-
+const User = require('../models/user')
 // const Order = sequelize.define('order', {
 //   orderId: {
 //     type: Sequelize.STRING,
@@ -26,29 +26,49 @@ const sequelize = require('../config/database');  // Assuming you have this file
 //   },
 // });
 
+
+// Define Payment model
 const Payment = sequelize.define('Payment', {
-  orderId: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      primaryKey: true
+    id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+    allowNull: false
   },
-  paymentSessionId : {
-      type: DataTypes.STRING,
-      allowNull: false
+  orderId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+  },
+  paymentSessionId: {
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   orderAmount: {
-      type: DataTypes.FLOAT,
-      allowNull: false
+    type: DataTypes.FLOAT,
+    allowNull: false,
   },
   orderCurrency: {
-      type: DataTypes.STRING,
-      allowNull: false
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   paymentStatus: {
-      type: DataTypes.STRING,
-      allowNull: false
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'Pending',
+  },
+    userId: { 
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users', 
+      key: 'id'
+    }
   }
-}, {
 });
+
+Payment.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Payment, { foreignKey: 'userId' });
+
 
 module.exports = Payment;

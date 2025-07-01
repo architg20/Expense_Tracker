@@ -1,74 +1,100 @@
-const path = require("path");
-const {
-  createOrder,
-  getPaymentStatus: fetchPaymentStatus,
-} = require("../services/cashfreeServices");
+const { createOrderInCashfree, fetchOrderStatusFromCashfree } = require("../services/cashfreeServices");
 const Payment = require("../models/payment");
-const TemplateGenerator = require("../Template/htmltemp");
+const upgradeUserToPremium = require("../utils/upgradeUser");
+//const User = require("../models/user");
+const jwt = require('jsonwebtoken');
 
-exports.getPaymentPage = (req, res) => {
-  res.sendFile(path.join(__dirname, "../views/index.html"));
-};
-
-exports.processPayment = async (req, res) => {
-  const orderId = "ORDER-" + Date.now();
-  const orderAmount = 2000;
-  const orderCurrency = "INR";
-  const customerID = "1";
-  const customerPhone = "9999999999";
-
+exports.initPayment = async (req, res) => {
+  const { orderAmount, orderCurrency, customerID, customerPhone } = req.body;
+  const orderId = "ORDER_" + Date.now();
+  console.log("Request Body:", req.body);
   try {
-    const paymentSessionId = await createOrder(
+    const response = await createOrderInCashfree({
       orderId,
       orderAmount,
       orderCurrency,
-      customerID,
-      customerPhone
-    );
+      customerID:String(customerID),
+      customerPhone,
+
+    });
 
     await Payment.create({
       orderId,
-      paymentSessionId,
+      paymentSessionId: response.payment_session_id,
       orderAmount,
       orderCurrency,
-      paymentStatus: "Pending",
+      paymentStatus: "PENDING",
+      userId: req.user.id,
     });
+    console.log("req.user in initPayment:", req.user);
 
-    res.json({ paymentSessionId, orderId });
+    res.status(200).json({
+      orderId,
+      paymentSessionId: response.payment_session_id
+    });
   } catch (error) {
-    console.error("Error processing payment:", error.message);
-    res.status(500).json({ message: "Error processing payment" });
+    console.error("Cashfree order creation failed.");
+    console.error("Error message:", error.message);
+    res.status(500).json({ message: "Error creating order" });
   }
 };
 
 exports.getPaymentStatus = async (req, res) => {
-  const paymentSessionId = req.params.paymentSessionId;
+  console.log("🔔 getPaymentStatus route triggered");
+  const { orderId } = req.params;
 
   try {
-    const order = await Payment.findOne({ where: { paymentSessionId } });
+    const order = await Payment.findOne({ where: { orderId } });
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
+    const response = await fetchOrderStatusFromCashfree(orderId);
+    order.paymentStatus = response.order_status;
+    await order.save();
+    console.log(response.order_status)
+    if (response.order_status === "PAID") {
+      // Redirect to expense dashboard
+      
+      console.log("Paid");
+       const upgraded = await upgradeUserToPremium(order.userId);
+       if (!upgraded) {
+        console.warn("⚠️ Failed to upgrade user.");
+        }
+
+        const newToken = jwt.sign(
+  {
+    id: upgraded.id,
+    email: upgraded.email,
+    username: upgraded.username,
+    premium: upgraded.premium
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: '1h' }
+);
+
+return res.redirect(`/payment-success.html?token=${newToken}`);
+
+      // console.log("Order details:", order);
+      // console.log("User ID on this order:", order.userId);
+      // const user = await User.findByPk(order.userId);
+      // console.log(user);
+      // if (user) {
+      //   user.premium = true;
+      //   await user.save();
+      //   console.log("🌟 User upgraded to premium.");
+      // } else {
+      //   console.warn("⚠️ User not found for this order.");
+      // }
+
+
+      //return res.redirect('/expense');
+
+    } else {
+      // Redirect to payment failed page
+      return res.redirect('payment-failure');
     }
 
-    const orderStatus = await fetchPaymentStatus(order.orderId);
 
-    order.paymentStatus = orderStatus;
-
-    // Optionally mark as premium if needed
-    // if (orderStatus === "Success") {
-    //   order.isPremium = true;
-    // }
-
-    await order.save();
-
-    const htmlTemp = TemplateGenerator(
-      order.orderId,
-      orderStatus,
-      order.orderAmount
-    );
-
-    res.send(htmlTemp);
+    //res.status(200).json({ orderStatus: response.order_status });
   } catch (error) {
     console.error("Error fetching payment status:", error.message);
     res.status(500).json({ message: "Error fetching payment status" });
