@@ -271,18 +271,17 @@ if (isPremium) {
  let limit = parseInt(localStorage.getItem('expensesPerPage')) || 10;
  let allExpenses = [];
 
- // Set dropdown to reflect saved preference
+
 document.getElementById('items-per-page').value = limit;
 
-// Handle change in items per page dynamically
+
 document.getElementById('items-per-page').addEventListener('change', () => {
   limit = parseInt(document.getElementById('items-per-page').value);
   localStorage.setItem('expensesPerPage', limit);
-  currentPage = 1; // reset to first page
-  renderExpenses(currentPage); // re-render with new limit
+  currentPage = 1; 
+  renderExpenses(currentPage); 
 });
-git config user.name
-git config user.email
+
 async function fetchAllExpenses() {
   const response = await fetch('/expense/get', {
     headers: { 'Authorization': `Bearer ${token}` }
@@ -292,9 +291,9 @@ async function fetchAllExpenses() {
 
 
   if (!data.success || !Array.isArray(data.expenses)){
-    console.error("Expected an array but got:", data);
+    console.error("No Array but got :", data);
     if (data.message === 'Token has expired') {
-      alert("Session expired. Please log in again.");
+      alert("Token expired.");
       localStorage.removeItem('token');
       window.location.href = 'login.html';
     } else {

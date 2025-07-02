@@ -7,6 +7,17 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const paymentRoutes = require('./routes/paymentRoutes'); // Import payment routes
 const premiumRoutes = require('./routes/premiumRoutes');
 const passwordRoutes = require('./routes/password');
+
+
+const fs = require('fs');
+const morgan = require('morgan');
+
+
+
+const PORT = process.env.PORT || 3000;
+
+
+
 require('dotenv').config();
 
 
@@ -32,6 +43,15 @@ app.use('/premium', premiumRoutes);
 app.use('/password', passwordRoutes);
 
 
+//Logging using morgan
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, 'access.log'),
+  { flags: 'a' } // append mode
+);
+
+app.use(morgan('combined', { stream: accessLogStream }));
+
+
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'login.html')); 
@@ -49,6 +69,20 @@ app.get('/payment-failed', (req, res) => {
 app.get('/expense', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'expense.html'));
 });
+
+const errorLogStream = fs.createWriteStream(
+  path.join(__dirname, 'errors.log'),
+  { flags: 'a' }
+);
+
+app.use((err, req, res, next) => {
+  const errorMsg = `[${new Date().toISOString()}] ${err.stack}\n`;
+  errorLogStream.write(errorMsg);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
+
+
+
 // Start the server after syncing the database
 sequelize.sync({ alter: true })
   .then(() => {
@@ -58,6 +92,6 @@ sequelize.sync({ alter: true })
     console.error('Error syncing database:', err);
   });
 
-app.listen(3000, () => {
-  console.log(`Server is running on port 3000`);
+app.listen(PORT, () => {
+  console.log(`Server is running on port {PORT}`);
 });
