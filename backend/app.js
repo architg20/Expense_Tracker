@@ -1,3 +1,6 @@
+
+
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
@@ -7,6 +10,7 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const paymentRoutes = require('./routes/paymentRoutes'); // Import payment routes
 const premiumRoutes = require('./routes/premiumRoutes');
 const passwordRoutes = require('./routes/password');
+const Download = require('./models/download');
 
 
 const fs = require('fs');
@@ -18,7 +22,7 @@ const PORT = process.env.PORT || 3000;
 
 
 
-require('dotenv').config();
+
 
 
 require('./models/user');
@@ -34,7 +38,9 @@ app.use(express.json()); // Add this to handle JSON data
 app.use(express.static(path.join(__dirname, 'views'))); // Serve static files from 'views' folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-
+console.log('Using S3 bucket:', process.env.S3_BUCKET_NAME);
+console.log('Region:', process.env.AWS_REGION);
+console.log('Access Key starts with:', process.env.IAM_SECRET?.slice(0, 4));
 // Routes
 app.use('/auth', authRoutes); 
 app.use('/expense', expenseRoutes); 
@@ -84,7 +90,7 @@ app.use((err, req, res, next) => {
 
 
 // Start the server after syncing the database
-sequelize.sync({ alter: true })
+sequelize.sync()
   .then(() => {
     console.log('Database synced successfully!');
   })
@@ -93,5 +99,5 @@ sequelize.sync({ alter: true })
   });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port {PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
